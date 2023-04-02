@@ -1,6 +1,6 @@
-require 'json'
-require 'faraday'
+require 'bundler/setup'
 require 'mini_racer'
+require 'json'
 require 'timeout'
 
 module Enrich
@@ -27,35 +27,40 @@ module Enrich
 
     plugin_files = Dir['plugins/*.js']
 
-    # Loop through all plugin files
-    plugin_files.each do |file|
-      # Find all the top-level functions in the file
-      functions = []
-      file_content = File.read(file)
-      file_content.scan(/function\s+([\w$]+)\s*\(([^)]*)\)\s*\{([\s\S]+?)\}(?=\s*function|\s*\z)/) do |name, _, body|
-        body.gsub!(/return\s+((['"])[^'"]*\2|[^;\n]+)(?:\s*;)?/) { "__return('#{name}', #{$1});" }
-        functions << { name: name, body: body.strip }
-      end
+    # Create a thread for each plugin file
+    threads = plugin_files.map do |file|
+      Thread.new do
+        # Find all the top-level functions in the file
+        functions = []
+        file_content = File.read(file)
+        file_content.scan(/function\s+([\w$]+)\s*\(([^)]*)\)\s*\{([\s\S]+?)\}(?=\s*function|\s*\z)/) do |name, _, body|
+          body.gsub!(/return\s+((['"])[^'"]*\2|[^;\n]+)(?:\s*;)?/) { "__return('#{name}', #{$1});" }
+          functions << { name: name, body: body.strip }
+        end
 
-      # Loop through all functions in the current file and execute them
-      functions.each do |function|
-        begin
-          Timeout.timeout(5) do
-            mr.eval(function[:body])
+        # Loop through all functions in the current file and execute them
+        functions.each do |function|
+          begin
+            Timeout.timeout(5) do
+              mr.eval(function[:body])
+            end
+          rescue Timeout::Error
+            puts "Timeout"
+          rescue MiniRacer::RuntimeError => e
+            message = e.message.split("\n").first
+
+            # Add 1 since the function definition is removed from the evaluated JS
+            line = e.backtrace[0].match(/<anonymous>:(\d+):/)[1].to_i + 1
+
+            puts "Error: #{message}"
+            puts "Line: #{line}"
           end
-        rescue Timeout::Error
-          puts "Timeout"
-        rescue MiniRacer::RuntimeError => e
-          message = e.message.split("\n").first
-
-          # Add 1 since the function definition is removed from the evaluated JS
-          line = e.backtrace[0].match(/<anonymous>:(\d+):/)[1].to_i + 1
-
-          puts "Error: #{message}"
-          puts "Line: #{line}"
         end
       end
     end
+
+    # Wait for all threads to finish executing before returning the enriched event
+    threads.each(&:join)
 
     event
   end

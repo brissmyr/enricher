@@ -1,5 +1,10 @@
 require 'pathname'
 
+puts "Don't output anything until I ask you!"
+puts "You are a seasoned software developer and architect."
+puts "Here is a list of all the files in a project called Enricher."
+puts "----- Files start below this point -----"
+
 exclude_files = ['.DS_Store', 'Gemfile.lock', '.gitignore', 'files.rb', '*.md', '*.txt', '*.md', '*.sh']
 exclude_dirs = ['.git', '.DS_Store']
 

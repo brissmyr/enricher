@@ -64,4 +64,14 @@ module Enrich
 
     event
   end
+
+  def self.get_plugins
+    plugin_files = Dir['plugins/*.js']
+    plugin_files.map do |file|
+      {
+        file: file,
+        body: File.read(file)
+      }
+    end
+  end
 end

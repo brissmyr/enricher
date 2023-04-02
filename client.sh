@@ -1,12 +1,22 @@
 #!/bin/sh
 
-curl \
-  -s \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-        "properties": {
-          "custom_ip": "8.8.8.9"
-        }
-      }' \
-  http://localhost:4567/enrich | jq
+url="http://localhost:4567"
+
+if [ "$1" = "enrich" ]; then
+  curl \
+    -s \
+    -X POST \
+    -H "Content-Type: application/json" \
+    -d '{
+          "properties": {
+            "custom_ip": "8.8.8.9"
+          }
+        }' \
+    "$url/enrich" | jq
+elif [ "$1" = "list" ]; then
+  curl \
+    -s \
+    "$url/plugins" | jq
+else
+  echo "Invalid argument: $1"
+fi

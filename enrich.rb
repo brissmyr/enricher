@@ -74,4 +74,8 @@ module Enrich
     end
   end
 
+  def self.create_plugin(name, code)
+    DB[:plugins].insert(name: name, code: code)
+  end
+
 end

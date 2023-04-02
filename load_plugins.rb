@@ -1,4 +1,5 @@
 require 'sequel'
+require_relative 'enrich'
 
 DB = Sequel.connect('sqlite://plugins.db')
 
@@ -12,5 +13,5 @@ end
 Dir.glob('plugins/*.js').each do |file|
   name = File.basename(file, '.js')
   code = File.read(file)
-  DB[:plugins].insert(name: name, code: code)
+  Enrich.create_plugin(name, code)
 end

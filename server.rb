@@ -28,3 +28,15 @@ get '/list' do
   plugins = Enrich.get_plugins
   JSON.pretty_generate(plugins)
 end
+
+post '/plugins' do
+  content_type :json
+
+  payload = JSON.parse(request.body.read)
+  name = payload['name']
+  code = payload['code']
+
+  Enrich.create_plugin(name, code)
+
+  status 201
+end

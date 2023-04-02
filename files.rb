@@ -5,7 +5,7 @@ puts "You are a seasoned software developer and architect."
 puts "Here is a list of all the files in a project called Enricher."
 puts "----- Files start below this point -----"
 
-exclude_files = ['.DS_Store', 'Gemfile.lock', '.gitignore', 'files.rb', '*.md', '*.txt', '*.md', '*.sh']
+exclude_files = ['.DS_Store', 'Gemfile.lock', '.gitignore', 'files.rb', '*.md', '*.txt', '*.md', '*.sh', 'plugins.db']
 exclude_dirs = ['.git', '.DS_Store']
 
 def print_file_contents(file_path)
@@ -26,7 +26,6 @@ def walk_dir(dir_path, exclude_files, exclude_dirs)
     else
       exclude_file = exclude_files.any? { |pattern| Pathname.new(filename).fnmatch?(pattern) }
       next if exclude_file
-      puts file_path
       print_file_contents(file_path)
     end
   end

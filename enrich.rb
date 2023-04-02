@@ -65,17 +65,15 @@ module Enrich
   end
 
   def self.get_plugins
-    # Retrieve the list of plugins from the database
     plugins = DB[:plugins].all
-
-    # Convert the plugins to an array of hashes with name and code keys
     plugins.map do |plugin|
-      { name: plugin[:name], code: plugin[:code] }
+      { id: plugin[:id], name: plugin[:name], code: plugin[:code] }
     end
   end
 
   def self.create_plugin(name, code)
     DB[:plugins].insert(name: name, code: code)
+    DB[:plugins].order(Sequel.desc(:id)).first[:id]
   end
 
 end

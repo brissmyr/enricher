@@ -1,11 +1,9 @@
 require 'json'
 require_relative 'enrich'
 
-# Get the argument passed to the script
 action = ARGV[0]
 
 if action == 'enrich'
-  # Define the event to enrich
   event = {
     'type' => 'user_action',
     'properties' => {

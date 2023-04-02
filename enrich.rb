@@ -1,13 +1,4 @@
-require 'bundler/setup'
-require 'mini_racer'
-require 'json'
-require 'timeout'
-require 'sequel'
-
 module Enrich
-  # Connect to the SQLite3 database using the Sequel gem
-  DB = Sequel.connect('sqlite://plugins.db')
-
   def self.run(event)
     event[:enrichment] = {}
 
@@ -29,14 +20,13 @@ module Enrich
     mr.attach("context.request", context[:request])
     mr.eval('const event = ' + JSON.generate(event) + ";")
 
-    # Retrieve the list of plugins and functions from the database
-    plugins = Enrich.get_plugins
+    plugins = Plugin.all
 
     # Loop through all plugins and functions and execute them
     plugins.each do |plugin|
       functions = []
 
-      plugin[:code].scan(/function\s+([\w$]+)\s*\(([^)]*)\)\s*\{([\s\S]+?)\}(?=\s*function|\s*\z)/) do |name, _, body|
+      plugin.code.scan(/function\s+([\w$]+)\s*\(([^)]*)\)\s*\{([\s\S]+?)\}(?=\s*function|\s*\z)/) do |name, _, body|
         body.gsub!(/return\s+((['"])[^'"]*\2|[^;\n]+)(?:\s*;)?/) { "__return('#{name}', #{$1});" }
         functions << { name: name, body: body.strip }
       end
@@ -63,17 +53,4 @@ module Enrich
 
     event
   end
-
-  def self.get_plugins
-    plugins = DB[:plugins].all
-    plugins.map do |plugin|
-      { id: plugin[:id], name: plugin[:name], code: plugin[:code] }
-    end
-  end
-
-  def self.create_plugin(name, code)
-    DB[:plugins].insert(name: name, code: code)
-    DB[:plugins].order(Sequel.desc(:id)).first[:id]
-  end
-
 end

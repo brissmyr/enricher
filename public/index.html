@@ -12,29 +12,116 @@
     <script type="text/babel">
       function App() {
         const [plugins, setPlugins] = React.useState([]);
+        const [newPluginName, setNewPluginName] = React.useState('');
+        const [newPluginCode, setNewPluginCode] = React.useState('');
+        const [updatePluginId, setUpdatePluginId] = React.useState('');
+        const [updatePluginCode, setUpdatePluginCode] = React.useState('');
+        const [deletePluginId, setDeletePluginId] = React.useState('');
 
         React.useEffect(() => {
-          fetch('/list')
+          fetch('/plugins')
             .then(res => res.json())
             .then(data => setPlugins(data));
         }, []);
 
+        function handleCreatePlugin() {
+          fetch('/plugins', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newPluginName, code: newPluginCode }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              setNewPluginName('');
+              setNewPluginCode('');
+              setPlugins([...plugins, data]);
+            });
+        }
+
+        function handleUpdatePlugin() {
+          console.log('dfadsfds')
+          fetch(`/plugins/${updatePluginId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: updatePluginCode }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              setUpdatePluginId('');
+              setUpdatePluginCode('');
+              setPlugins(plugins.map(p => (p.id === data.id ? data : p)));
+            });
+        }
+
+        function handleDeletePlugin() {
+          fetch(`/plugins/${deletePluginId}`, {
+            method: 'DELETE',
+          })
+            .then(() => {
+              setDeletePluginId('');
+              setPlugins(plugins.filter(p => p.id !== parseInt(deletePluginId)));
+            });
+        }
         return (
           <div>
             <h1>Enricher Plugins List</h1>
             <ul>
-              {plugins.map((plugin, index) => (
-                <li key={index}>
+              {plugins.map(plugin => (
+                <li key={plugin.id}>
                   <strong>{plugin.name}</strong>
                   <pre>{plugin.code}</pre>
+                  <button onClick={() => setUpdatePluginId(plugin.id)}>Update Plugin</button>
+                  <button onClick={() => setDeletePluginId(plugin.id)}>Delete Plugin</button>
                 </li>
               ))}
             </ul>
+            <h2>Create Plugin</h2>
+            <form onSubmit={handleCreatePlugin}>
+              <label>
+                Name:
+                <br />
+                <input type="text" value={newPluginName} onChange={e => setNewPluginName(e.target.value)} />
+              </label>
+              <br />
+              <label>
+                Code:
+                <br />
+                <textarea rows="10" value={newPluginCode} onChange={e => setNewPluginCode(e.target.value)} />
+              </label>
+              <br />
+              <button type="submit">Create Plugin</button>
+            </form>
+            <h2>Update Plugin</h2>
+            <form onSubmit={handleUpdatePlugin}>
+              <label>
+                Plugin ID:
+                <br />
+                <input type="text" value={updatePluginId} onChange={e => setUpdatePluginId(e.target.value)} />
+              </label>
+              <br />
+              <label>
+                Code:
+                <br />
+                <textarea rows="10" value={updatePluginCode} onChange={e => setUpdatePluginCode(e.target.value)} />
+              </label>
+              <br />
+              <button type="submit">Update Plugin</button>
+            </form>
+            <h2>Delete Plugin</h2>
+            <form onSubmit={handleDeletePlugin}>
+              <label>
+                Plugin ID:
+                <br />
+                <input type="text" value={deletePluginId} onChange={e => setDeletePluginId(e.target.value)} />
+              </label>
+              <br />
+              <button type="submit">Delete Plugin</button>
+            </form>
           </div>
         );
       }
 
-      ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
-  </body>
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
 </html>

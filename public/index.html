@@ -25,8 +25,8 @@
             <ul>
               {plugins.map((plugin, index) => (
                 <li key={index}>
-                  <strong>{plugin.file}</strong>
-                  <pre>{plugin.body}</pre>
+                  <strong>{plugin.name}</strong>
+                  <pre>{plugin.code}</pre>
                 </li>
               ))}
             </ul>

@@ -16,7 +16,7 @@ if [ "$1" = "enrich" ]; then
 elif [ "$1" = "list" ]; then
   curl \
     -s \
-    "$url/plugins" | jq
+    "$url/list" | jq
 else
   echo "Invalid argument: $1"
 fi

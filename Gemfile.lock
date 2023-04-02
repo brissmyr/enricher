@@ -15,11 +15,13 @@ GEM
     rack-protection (2.1.0)
       rack
     ruby2_keywords (0.0.5)
+    sequel (5.47.0)
     sinatra (2.1.0)
       mustermann (~> 1.0)
       rack (~> 2.2)
       rack-protection (= 2.1.0)
       tilt (~> 2.0)
+    sqlite3 (1.4.4)
     tilt (2.1.0)
     timeout (0.3.2)
 
@@ -30,8 +32,10 @@ DEPENDENCIES
   faraday (~> 2.7.4)
   json (~> 2.6.1)
   mini_racer (~> 0.6.3)
+  sequel (~> 5.47.0)
   sinatra (~> 2.1.0)
-  timeout
+  sqlite3 (~> 1.4.2)
+  timeout (~> 0.3.2)
 
 BUNDLED WITH
    2.2.27

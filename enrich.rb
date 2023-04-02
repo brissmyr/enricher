@@ -2,8 +2,12 @@ require 'bundler/setup'
 require 'mini_racer'
 require 'json'
 require 'timeout'
+require 'sequel'
 
 module Enrich
+  # Connect to the SQLite3 database using the Sequel gem
+  DB = Sequel.connect('sqlite://plugins.db')
+
   def self.run(event)
     event[:enrichment] = {}
 
@@ -25,53 +29,49 @@ module Enrich
     mr.attach("context.request", context[:request])
     mr.eval('const event = ' + JSON.generate(event) + ";")
 
-    plugin_files = Dir['plugins/*.js']
+    # Retrieve the list of plugins and functions from the database
+    plugins = Enrich.get_plugins
 
-    # Create a thread for each plugin file
-    threads = plugin_files.map do |file|
-      Thread.new do
-        # Find all the top-level functions in the file
-        functions = []
-        file_content = File.read(file)
-        file_content.scan(/function\s+([\w$]+)\s*\(([^)]*)\)\s*\{([\s\S]+?)\}(?=\s*function|\s*\z)/) do |name, _, body|
-          body.gsub!(/return\s+((['"])[^'"]*\2|[^;\n]+)(?:\s*;)?/) { "__return('#{name}', #{$1});" }
-          functions << { name: name, body: body.strip }
-        end
+    # Loop through all plugins and functions and execute them
+    plugins.each do |plugin|
+      functions = []
 
-        # Loop through all functions in the current file and execute them
-        functions.each do |function|
-          begin
-            Timeout.timeout(5) do
-              mr.eval(function[:body])
-            end
-          rescue Timeout::Error
-            puts "Timeout"
-          rescue MiniRacer::RuntimeError => e
-            message = e.message.split("\n").first
+      plugin[:code].scan(/function\s+([\w$]+)\s*\(([^)]*)\)\s*\{([\s\S]+?)\}(?=\s*function|\s*\z)/) do |name, _, body|
+        body.gsub!(/return\s+((['"])[^'"]*\2|[^;\n]+)(?:\s*;)?/) { "__return('#{name}', #{$1});" }
+        functions << { name: name, body: body.strip }
+      end
 
-            # Add 1 since the function definition is removed from the evaluated JS
-            line = e.backtrace[0].match(/<anonymous>:(\d+):/)[1].to_i + 1
-
-            puts "Error: #{message}"
-            puts "Line: #{line}"
+      functions.each do |function|
+        begin
+          Timeout.timeout(5) do
+            mr.eval(function[:body])
           end
+        rescue Timeout::Error
+          puts "Timeout"
+        rescue MiniRacer::RuntimeError => e
+          message = e.message.split("\n").first
+
+          # Add 1 since the function definition is removed from the evaluated JS
+          line = e.backtrace[0].match(/<anonymous>:(\d+):/)[1].to_i + 1
+
+          puts "Error: #{message}"
+          puts "Line: #{line}"
         end
       end
-    end
 
-    # Wait for all threads to finish executing before returning the enriched event
-    threads.each(&:join)
+    end
 
     event
   end
 
   def self.get_plugins
-    plugin_files = Dir['plugins/*.js']
-    plugin_files.map do |file|
-      {
-        file: file,
-        body: File.read(file)
-      }
+    # Retrieve the list of plugins from the database
+    plugins = DB[:plugins].all
+
+    # Convert the plugins to an array of hashes with name and code keys
+    plugins.map do |plugin|
+      { name: plugin[:name], code: plugin[:code] }
     end
   end
+
 end
